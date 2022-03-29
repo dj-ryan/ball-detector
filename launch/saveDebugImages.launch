@@ -1,0 +1,17 @@
+<launch>
+  <node name="saveDebug1" pkg="image_view" type="extract_images" respawn="false" output="screen">
+    <param name="filename_format" value="$(env PWD)/%04i_debug1.jpg" />
+    <remap from="image" to="/balldebug/img1"/>
+  </node>
+
+  <node name="saveDebug2" pkg="image_view" type="extract_images" respawn="false" output="screen" >
+    <remap from="image" to="/balldebug/img2"/>
+    <param name="filename_format" value="$(env PWD)/%04i_debug2.jpg" />
+  </node>
+
+  <node name="saveDebug3" pkg="image_view" type="extract_images" respawn="false" output="screen" >
+    <remap from="image" to="/balldebug/img3"/>
+    <param name="filename_format" value="$(env PWD)/%04i_debug3.jpg" />
+  </node>
+
+</launch>

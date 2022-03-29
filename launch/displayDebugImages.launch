@@ -1,0 +1,14 @@
+<launch>
+  <node name="ball_debug1" pkg="image_view" type="image_view" respawn="false" output="screen" >
+    <remap from="/image" to="/balldebug/img1"/>
+  </node>
+
+  <node name="ball_debug2" pkg="image_view" type="image_view" respawn="false" output="screen" >
+    <remap from="/image" to="/balldebug/img2"/>
+  </node>
+
+  <node name="ball_debug3" pkg="image_view" type="image_view" respawn="false" output="screen" >
+    <remap from="/image" to="/balldebug/img3"/>
+  </node>
+
+</launch>

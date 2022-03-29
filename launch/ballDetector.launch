@@ -1,0 +1,11 @@
+<launch>
+  
+  <rosparam param="thresh/">
+    high: {h: 140, s: 120, v: 70}
+    low: {h: 105, s: 80, v: 20}
+  </rosparam>
+
+  <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node" output="screen">
+  </node>
+
+</launch>
