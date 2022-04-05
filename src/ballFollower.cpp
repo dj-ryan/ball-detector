@@ -8,8 +8,6 @@ void ballLocationCallback(const std_msgs::Int64 data)
     // do some math
 }
 
-
-
 int main(int argc, char **argv)
 {
 
@@ -26,9 +24,6 @@ int main(int argc, char **argv)
     int count = 0;
     while (ros::ok())
     {
-
-
-
         chatter_pub.publish(/*something*/);
 
         ros::spinOnce();
