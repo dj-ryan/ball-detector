@@ -16,6 +16,7 @@
   </rosparam> 
 
   <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node" output="screen">
+  <include file="$(find ball_detector)/launch/displayDebugImages.launch" />
   </node>
 
 </launch>
