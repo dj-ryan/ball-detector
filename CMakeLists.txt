@@ -191,3 +191,7 @@ target_link_libraries (ball_detector_node ${OpenCV_LIBRARIES} ${catkin_LIBRARIES
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+add_executable(pacManDrive src/pacManDrive.cpp)
+target_link_libraries(pacManDrive ${catkin_LIBRARIES})
+add_dependencies(pacManDrive ${catkin_EXPORTED_TARGETS})
