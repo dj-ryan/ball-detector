@@ -216,6 +216,8 @@ int main(int argc, char ** argv)
 		
 		pubMotor.publish(motor);
 		
+		//welp
+		
 		ros::spinOnce();
 		loop_rate.sleep();
 	}
