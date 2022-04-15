@@ -27,7 +27,7 @@
   
   
   
-  <!-- can be commented out later -->
+  <!-- opens debug image -->
   <include file="$(find ball_detector)/launch/displayDebugImages.launch" />
   
 <!--

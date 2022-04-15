@@ -129,7 +129,8 @@ void lungeFowardToBall(){
 		ROS_INFO("lunged foward");
 		// TODO: pub motors staright
 		//pub motor straight
-		ros::Duration(lungeDelay).sleep(); // should not update msgs
+		motor.left = 100;
+		motor.right = 100;
 		robotState = searchState;
 	
 	
@@ -147,6 +148,9 @@ void turnAwayFromWall(){
 
 void searchForBall(){
 		// TODO: implement search function
+		
+		motor.right = 0;
+		motor.left = 0;
 	}
 
 
@@ -170,7 +174,7 @@ int main(int argc, char ** argv)
 //		ROS_INFO("%f", ball.x);
 		
 		
-		//pubMotor.publish(motor)
+		
 		
 		
 		
@@ -197,6 +201,8 @@ int main(int argc, char ** argv)
 			case lungeState:
 				ROS_INFO("=> lunge state");
 				lungeFowardToBall();
+				pubMotor.publish(motor);
+				ros::Duration(lungeDelay).sleep(); // should not update msgs
 				break;
 			case turnState:
 				ROS_INFO("=> turn state");
@@ -208,7 +214,7 @@ int main(int argc, char ** argv)
 				break;
 		}
 		
-		
+		pubMotor.publish(motor);
 		
 		ros::spinOnce();
 		loop_rate.sleep();
