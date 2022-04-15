@@ -1,21 +1,71 @@
 <launch>
 
- <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+ <node name="usb_cam" pkg="usb_cam" type="usb_cam_node">
     <param name="video_device" value="/dev/video0" />
     <param name="image_width" value="640" />
     <param name="image_height" value="480" />
     <param name="pixel_format" value="yuyv" />
     <param name="camera_frame_id" value="usb_cam" />
     <param name="io_method" value="mmap" />
-    <remap from="/usb_cam/image_raw" to="/image"/>
+    <remap from="usb_cam/image_raw" to="image"/>
+    <!-- <remap from="/usb_cam/image_raw" to="yellow/image"/>
+    <remap from="/usb_cam/image_raw" to="green/image"/>
+    <remap from="/usb_cam/image_raw" to="yellow/image"/> -->
  </node>
-
+ 
+ 
+ 
+ <!-- remove comments -->
+ <!-- <group ns="yellow"> -->
   <rosparam param="thresh/">
     high: {h: 49, s: 255, v: 246}
     low: {h: 15, s: 86, v: 119}
   </rosparam> 
 
-  <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node" output="screen">
+  <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node">
   </node>
+  
+  
+  
+  <!-- can be commented out later -->
+  <include file="$(find ball_detector)/launch/displayDebugImages.launch" />
+  
+<!--
+<node name="ball_debug1" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="/image" to="/balldebug/img1"/>
+</node>
+
+ </group>-->
+
+<!--
+
+<group ns="green">
+    <rosparam param="thresh/">
+        high: {h: 71, s: 255, v: 246}
+        low: {h: 92, s: 86, v: 119}
+    </rosparam>
+    
+    <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node">
+  </node>
+   <node name="ball_debug1" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="/image" to="/balldebug/img1"/>
+</node>
+</group>
+
+<group ns="purple">
+
+    <rosparam param="thresh/">
+        high: {h: 131, s: 255, v: 246}
+        low: {h: 200, s: 86, v: 119}
+    </rosparam>
+    
+    <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node">
+  </node>
+   <node name="ball_debug1" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="/image" to="/balldebug/img1"/>
+</node>
+</group>
+
+-->
 
 </launch>
