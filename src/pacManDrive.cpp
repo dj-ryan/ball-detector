@@ -29,7 +29,7 @@ int robotState = searchState; // starting state
 ros::Time lastBallSeen; // last time the ball was seen
 int32_t forgetBallDelay = 3; // time to forget a ball was identified (sec)
 int32_t lungeDelay = 2; // time lunge lasts (sec)
-int32_t lungRadiusThresh = 200; // max radius before activate lunge mode
+int32_t lungRadiusThresh = 180; // max radius before activate lunge mode
 
 
 // global pid vars
@@ -40,10 +40,10 @@ double distanceRunningAvg = 0;
 
 
 // pid values
-double pAngle = 0.015;
-double dAngle = 0.05;
-double pDistance = 0.07;
-double dDistance = 0.01;
+double pAngle = 0.09;
+double dAngle = 0.07;
+double pDistance = 0.6;
+double dDistance = 0.05;
 
 // target distance when in track state
 double targetDistance = (double)lungRadiusThresh; 
@@ -116,24 +116,22 @@ void trackBallPID(){
     //motor.left = distancePIDValue + anglePIDValue
     //motor.right = distancePIDValue - anglePIDValue
 
-    motor.left = distanceRunningAvg + angleRunningAvg;
-    motor.right = distanceRunningAvg - angleRunningAvg;
+    motor.left = distanceRunningAvg - angleRunningAvg;
+    motor.right = distanceRunningAvg + angleRunningAvg;
 		
 	//ROS_INFO("-------------------------");
     //ROS_INFO("Radius: %d", ball.radius);
     //ROS_INFO("x: %d", ball.x);
-    ROS_INFO("left motor: %f | right motor: %f", motor.left, motor.right);
+    //ROS_INFO("left motor: %f | right motor: %f", motor.left, motor.right);
 }
 
 void lungeFowardToBall(){
 		ROS_INFO("lunged foward");
 		// TODO: pub motors staright
 		//pub motor straight
-		motor.left = 100;
-		motor.right = 100;
+		motor.left = -100;
+		motor.right = -100;
 		robotState = searchState;
-	
-	
 	}
 
 
@@ -162,7 +160,7 @@ int main(int argc, char ** argv)
 
 	ros::Subscriber subLL = node.subscribe("balboaLL", 1000, callbackLL);
 	ros::Subscriber subBall = node.subscribe("ballLocation", 1000, callbackBall);
-	ros::Publisher pubMotor = node.advertise<std_msgs::Int32>("motorSpeeds", 1000);
+	ros::Publisher pubMotor = node.advertise<balboa_core::balboaMotorSpeeds>("motorSpeeds", 1000);
 
 	ros:: Rate loop_rate(10);
 
@@ -214,6 +212,8 @@ int main(int argc, char ** argv)
 				break;
 		}
 		
+		
+		ROS_INFO("Publish: %d, %d",motor.left, motor.right);
 		pubMotor.publish(motor);
 	
 		
