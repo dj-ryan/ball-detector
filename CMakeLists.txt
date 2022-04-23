@@ -195,3 +195,7 @@ target_link_libraries (ball_detector_node ${OpenCV_LIBRARIES} ${catkin_LIBRARIES
 add_executable(pacManDrive src/pacManDrive.cpp)
 target_link_libraries(pacManDrive ${catkin_LIBRARIES})
 add_dependencies(pacManDrive ${catkin_EXPORTED_TARGETS})
+
+add_executable(pickOne src/pickOne.cpp)
+target_link_libraries(pickOne ${catkin_LIBRARIES})
+add_dependencies(pickOne ${catkin_EXPORTED_TARGETS})

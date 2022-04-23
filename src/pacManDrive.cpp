@@ -2,9 +2,11 @@
 #include "std_msgs/Int32.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Header.h"
+
 #include "balboa_core/balboaLL.h"
 #include "ball_detector/ballLocation.h"
 #include "balboa_core/balboaMotorSpeeds.h"
+
 
 
 #include <sstream>
@@ -12,22 +14,24 @@
 
 
 // Robot states
-#define searchState 0 // same as roam state
+#define emptyState 0 // default
 #define trackState 1 // drive towards ball that has been found
 #define lungeState 2 // drive foward when close to ball
-#define scanState 3 // 360 degree scan to find balls
+#define searchState 3 // 360 degree scan to find balls
 #define turnState 4 // avoid wall by turnning if ir sensor trips
 #define roamState 5 //robot moves randomly
+#define pauseState 6 //set motors to zero
 
 
 // global data vars
 balboa_core::balboaLL robot;
 ball_detector::ballLocation ball;
 balboa_core::balboaMotorSpeeds motor;
+Balboa32U4ButtonA buttonA;
 
 int robotState = searchState; // starting state 
 ros::Time lastBallSeen; // last time the ball was seen
-int32_t forgetBallDelay = 3; // time to forget a ball was identified (sec)
+int32_t forgetBallDelay = 4; // time to forget a ball was identified (sec)
 int32_t lungeDelay = 2; // time lunge lasts (sec)
 int32_t lungRadiusThresh = 180; // max radius before activate lunge mode
 
@@ -40,9 +44,9 @@ double distanceRunningAvg = 0;
 
 
 // pid values
-double pAngle = 0.09;
+double pAngle = 0.09;		//0.09
 double dAngle = 0.07;
-double pDistance = 0.6;
+double pDistance = 1;		//0.6
 double dDistance = 0.05;
 
 // target distance when in track state
@@ -116,8 +120,8 @@ void trackBallPID(){
     //motor.left = distancePIDValue + anglePIDValue
     //motor.right = distancePIDValue - anglePIDValue
 
-    motor.left = distanceRunningAvg - angleRunningAvg;
-    motor.right = distanceRunningAvg + angleRunningAvg;
+    motor.left = -(distanceRunningAvg - angleRunningAvg);
+    motor.right = -(distanceRunningAvg + angleRunningAvg);
 		
 	//ROS_INFO("-------------------------");
     //ROS_INFO("Radius: %d", ball.radius);
@@ -129,8 +133,8 @@ void lungeFowardToBall(){
 		ROS_INFO("lunged foward");
 		// TODO: pub motors staright
 		//pub motor straight
-		motor.left = -100;
-		motor.right = -100;
+		motor.left = 100;
+		motor.right = 100;
 		robotState = searchState;
 	}
 
@@ -147,8 +151,24 @@ void turnAwayFromWall(){
 void searchForBall(){
 		// TODO: implement search function
 		
-		motor.right = 0;
-		motor.left = 0;
+		motor.right = 25;
+		motor.left = -25;
+		if(ball -> track){
+			robotState = trackState;
+		}
+	}
+	
+	
+	
+void ballTimer(){
+			
+		ros::Time begin = ros::Time::now();
+		ros::Duration ballDelta = begin - lastBallSeen;
+		if(ballDelta.toSec() > forgetBallDelay){
+			ROS_INFO("ball seen a while ago...");
+			robotState = searchState; // this should eventually be roam state
+		}
+		
 	}
 
 
@@ -162,7 +182,7 @@ int main(int argc, char ** argv)
 	ros::Subscriber subBall = node.subscribe("ballLocation", 1000, callbackBall);
 	ros::Publisher pubMotor = node.advertise<balboa_core::balboaMotorSpeeds>("motorSpeeds", 1000);
 
-	ros:: Rate loop_rate(10);
+	ros::Rate loop_rate(10);
 
 	while(ros::ok())
 	{
@@ -170,20 +190,6 @@ int main(int argc, char ** argv)
 //		ROS_INFO("...");
 //		ROS_INFO("%d",robot.distanceRight);
 //		ROS_INFO("%f", ball.x);
-		
-		
-		
-		
-		
-		
-
-		ros::Time begin = ros::Time::now();
-		ros::Duration ballDelta = begin - lastBallSeen;
-		if(ballDelta.toSec() > forgetBallDelay){
-			ROS_INFO("ball seen a while ago...");
-			robotState = searchState;
-		}
-		
 		
 		
 		
@@ -206,6 +212,10 @@ int main(int argc, char ** argv)
 				ROS_INFO("=> turn state");
 				turnAwayFromWall();
 				break;
+			case pauseState:
+				ROS_INFO("=> puase state");
+				motors.right = 0;
+				motors.left = 0;
 			default:
 				ROS_INFO("=> no state");
 				// go to search state?
