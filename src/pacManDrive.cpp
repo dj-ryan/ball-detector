@@ -30,6 +30,7 @@ int robotState = searchState; 	// starting state
 ros::Time lastBallSeen; 		// last time the ball was seen
 int32_t forgetBallDelay = 3; 	// time to forget a ball was identified (sec)
 int32_t lungeDelay = 2; 		// time lunge lasts (sec)
+double searchDelay = 0.3;  		// time search turn lasts (sec)
 int32_t lungeRadiusThresh = 180;// max radius before activate lunge mode
 int32_t avgRadiusThresh = 50;	// average radius before activite track mode 
 int32_t radiusAverage;			// ball radius average 
@@ -154,6 +155,7 @@ void lungeFowardToBall(){
 		//pub motor straight
 		motor.left = 100;
 		motor.right = 100;
+
 		robotState = searchState;
 	}
 
@@ -175,7 +177,16 @@ void searchForBall(){
 		
 		motor.right = -150;
 		motor.left = 150;
-		
+
+		// Wait for robot to hit turn 
+		ros::Duration(searchDelay).sleep();
+
+		motor.right = 0;
+		motor.left = 0;
+
+		// Wait for ball detection 
+		ros::Duration(searchDelay).sleep();
+
 		ROS_INFO("searching for ball");
 		
 		// possibly don't need to do any logic here
