@@ -36,7 +36,7 @@ double radiusAverage;			// ball radius average
 double oldRadiusAve;			// old ball radius average
 double avgRadiusThresh = 20;	// average radius before activite track mode
 
-double lungeRadiusThresh = 170;// max radius before activate lunge mode
+int32_t lungeRadiusThresh = 180;// max radius before activate lunge mode
 
 
 bool searchFlag = false;			// tflipflop var for search
@@ -51,14 +51,14 @@ double distanceRunningAvg = 0;
 
 
 // PID values
-double pAngle = 0.06;		// 0.09
-double dAngle = 0.0;		// 0.07
-double pDistance = 0.6;		// 0.6
-double dDistance = 0.2;	// 0.05
+double pAngle = 0.09;		// 0.09
+double dAngle = 0.07;
+double pDistance = 1;		// 0.6
+double dDistance = 0.05;
 
 
 // Target distance when in track state
-double targetDistance = lungeRadiusThresh;
+double targetDistance = (double)lungeRadiusThresh;
 
 double alpha = 0.1; // length of running average (1/alpha) i.e. 1/0.1 = 10
 
@@ -80,38 +80,29 @@ void callbackLL(const balboa_core::balboaLL &data)
 // Update ball detection variables
 void callbackBall(const ball_detector::ballLocation &data)
 {
-	ball = data;
-    //// Running average to filter out bad ball radius values / fake balls for past 100 balls
-    //radiusAverage = 0.7*(oldRadiusAve) + 0.3*(data.radius);
-    //ROS_INFO("Average: %f", radiusAverage);
+    // Running average to filter out bad ball radius values / fake balls for past 100 balls
+    radiusAverage = 0.7*(oldRadiusAve) + 0.3*(data.radius);
+    ROS_INFO("Average: %f", radiusAverage);
 
-    //// If ball is not close
-    //if(radiusAverage < lungeRadiusThresh) {
+    // If ball is not close
+    if(radiusAverage < lungeRadiusThresh) {
 
-        //// If real ball, enter track state
-        //if(radiusAverage > avgRadiusThresh) {
+        // If real ball, enter track state
+        if(radiusAverage > avgRadiusThresh) {
 
-            //robotState = trackState;
-            //radiusAverage = 0;
-        //}
-    //}
+            robotState = trackState;
+            radiusAverage = 0;
+        }
+    }
 
-    //// If ball is really close, lunge for ball
-    //else {
-        //robotState = lungeState;
-    //}
-    
-    if(data.radius < lungeRadiusThresh){
-		robotState = trackState;
-	} else {
-		robotState = lungeState;
-	}
-    
-    
+    // If ball is really close, lunge for ball
+    else {
+        robotState = lungeState;
+    }
 
     // Update variables
-
-    //radiusAverage = oldRadiusAve;
+    ball = data;
+    radiusAverage = oldRadiusAve;
     lastBallSeen = ros::Time::now();
 }
 
@@ -129,7 +120,7 @@ void trackBallPID() {
 
     //Calculate error
     double angleError = ball.x;
-    double distanceError = targetDistance - ball.radius;
+    double distanceError = ball.radius - targetDistance;
     //ROS_INFO("angleError: %f", angleError);
 
     //PID EQUATIONS
@@ -152,29 +143,26 @@ void trackBallPID() {
     oldDistanceError = distanceError;
 
     //Assign motor speeds
-    //motor.left = distancePIDValue - anglePIDValue;
-    //motor.right = distancePIDValue + anglePIDValue;
+    //motor.left = distancePIDValue + anglePIDValue
+    //motor.right = distancePIDValue - anglePIDValue
 
-    int motorLeft = (int)(distanceRunningAvg + angleRunningAvg);
-    int motorRight = (int)(distanceRunningAvg - angleRunningAvg);
-
-	// speed limit for the motors
-    if(motorLeft > 125) {
-        motorLeft = 125;
-    }
-    if(motorLeft < -125) {
-        motorLeft = -125;
-    }
-    if(motorRight > 125) {
-        motorRight = 125;
-    }
-    if(motorRight < -125) {
-        motorRight = -125;
-    }
+    motor.left = distanceRunningAvg - angleRunningAvg;
+    motor.right = distanceRunningAvg + angleRunningAvg;
     
-    motor.left = (int8_t)motorLeft;
-    motor.right = (int8_t)motorRight;
-
+    
+    if(motor.left > 125){
+		motor.left = 125;
+	}
+	if(motor.left < -125){
+		motor.left = -125;
+	}
+	if(motor.right > 125){
+		motor.right = 125;
+	}
+	if(motor.right < -125){
+		motor.right = -125;
+	}
+    
     ROS_INFO("Radius: %f | x: %f | lm: %d, rm: %d", ball.radius, ball.x, motor.left, motor.right);
 }
 
@@ -184,7 +172,7 @@ void lungeFowardToBall() {
     ROS_INFO("lunged foward");
     // TODO: pub motors staright
     //pub motor straight
-    motor.left = 120;
+    motor.left = 100;
     motor.right = 100;
 
     robotState = searchState;
@@ -212,7 +200,7 @@ void searchForBall() {
         motor.right = -125;
         motor.left = 125;
         searchDelay = 0.1;
-
+        
     } else {
         motor.right = 0;
         motor.left = 0;
@@ -237,8 +225,6 @@ void ballTimer() {
     ros::Duration ballDelta = begin - lastBallSeen;
     if(ballDelta.toSec() > forgetBallDelay) {
         ROS_INFO("ball seen a while ago...");
-        //motor.left = 0;
-        //motor.right = 0;
         robotState = searchState; // this should eventually be roam state
     }
 
@@ -270,13 +256,10 @@ int main(int argc, char ** argv)
         // ROS_INFO("%d",robot.distanceRight);
         // ROS_INFO("%f", ball.x);
 
-		//robotState = trackState;
-
         ballTimer();
-        
-
 
         // Robot State Machine
+        robotState = trackState;
         switch(robotState) {
         case searchState: // Search for balls
             ROS_INFO("=> search state");
