@@ -32,7 +32,7 @@ int robotState = searchState; 	// starting state
 ros::Time lastBallSeen; 		// last time the ball was seen
 
 double forgetBallDelay = 2; 	// time to forget a ball was identified (sec)
-double lungeDelay = 2; 			// time lunge lasts (sec)
+double lungeDelay = 1.5; 			// time lunge lasts (sec)
 double searchDelay = 0;  		// time search turn lasts (sec), reasigned
 double turnDelay = 1;	 		// time robot turns away from wall/obstacle (sec)
 double backDelay = 0.5;			// time robot backs up (sec)
@@ -93,14 +93,15 @@ void callbackBall(const ball_detector::ballLocation &data)
 {
     ball = data;
     // Running average to filter out bad ball radius values / fake balls for past 100 balls
-    radiusAverage = 0.9*(oldRadiusAve) + 0.1*(data.radius);
-    ROS_INFO("Average: %f", radiusAverage);
+    radiusAverage = (1-alpha)*(oldRadiusAve) + alpha*(data.radius);
 
     // If ball is not close
     if(radiusAverage < lungeRadiusThresh) {
 
         // If real ball, enter track state
         if(radiusAverage > avgRadiusThresh) {
+			
+		    ROS_INFO("Average: %f", radiusAverage);
 
             robotState = trackState;
             radiusAverage = 0;
@@ -206,7 +207,7 @@ void trackBallPID() {
 void lungeFowardToBall() {
     ROS_INFO("lunged foward");
     // pub motor straight
-    motor.left = 100; // delta for weak wheel (4/28) removed by rw (4/28)
+    motor.left = 120; // delta for weak wheel (4/28) 
     motor.right = 100;
 
     resetIntegralVars();
@@ -256,7 +257,7 @@ void searchForBall() {
     ROS_INFO("searching for ball... %d", searchCount);
 
     // exit condition
-    if (searchCount > 18) {
+    if (searchCount > 14) {
         ROS_INFO("searchCount > 50");
         robotState = roamState;
     }

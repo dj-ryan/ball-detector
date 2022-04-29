@@ -18,8 +18,8 @@
  <!-- remove comments -->
  <!-- <group ns="yellow"> -->
   <rosparam param="thresh/">
-    high: {h: 49, s: 255, v: 246}
-    low: {h: 30, s: 86, v: 119}
+    high: {h: 33, s: 255, v: 246}
+    low: {h: 29, s: 141, v: 119}
   </rosparam> 
 
   <node name="ball_detector_node" pkg="ball_detector" type="ball_detector_node">
