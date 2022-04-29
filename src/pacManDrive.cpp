@@ -18,7 +18,8 @@
 #define searchState 3 	// 360 degree scan to find balls
 #define turnState 4 	// avoid wall by turnning if ir sensor trips
 #define roamState 5 	// robot moves randomly
-#define pauseState 6 	// set motors to zero
+#define backupState 6	// robot moves backwards
+#define pauseState 7 	// set motors to zero
 
 
 // Global data vars
@@ -27,22 +28,24 @@ ball_detector::ballLocation ball;
 balboa_core::balboaMotorSpeeds motor;
 
 int robotState = searchState; 	// starting state
+
 ros::Time lastBallSeen; 		// last time the ball was seen
 
 double forgetBallDelay = 2; 	// time to forget a ball was identified (sec)
 double lungeDelay = 2; 			// time lunge lasts (sec)
 double searchDelay = 0;  		// time search turn lasts (sec), reasigned
-double turnDelay = 0.7; 		// time robot turns away from wall/obstacle (sec)
+double turnDelay = 1;	 		// time robot turns away from wall/obstacle (sec)
+double backDelay = 0.5;			// time robot backs up (sec)
 double roamDelay = 3;			// time robot roams looking for balls (sec)
 double radiusAverage;			// ball radius average
 double oldRadiusAve;			// old ball radius average
-double avgRadiusThresh = 20;	// average radius before activite track mode
+double avgRadiusThresh = 50;	// average radius before activite track mode
 double lungeRadiusThresh = 170;	// max radius before activate lunge mode
-double searchCount = 0; 		// counting variable for switching to roam state
 
+int searchCount = 0; 			// counting variable for switching to roam state
 
-bool searchFlag = false;			// tflipflop var for search
-
+bool searchFlag = false;		// tflipflop var for search
+//bool roamFlag = false;
 
 
 // Global PID vars
@@ -79,13 +82,10 @@ void callbackLL(const balboa_core::balboaLL &data)
     if(robot.rangeSensor > 400) {
         //	pubMotor.publish(/*turn right 115 degrees*/);
 
-        robotState = turnState;
+        robotState = backupState;
     }
 
 }
-
-
-
 
 
 // Update ball detection variables
@@ -106,8 +106,8 @@ void callbackBall(const ball_detector::ballLocation &data)
             radiusAverage = 0;
         }
     }
-    
-    
+
+
 
     // If ball is really close, lunge for ball
     else {
@@ -120,8 +120,6 @@ void callbackBall(const ball_detector::ballLocation &data)
         robotState = lungeState;
     }
 
-
-
     // Update variables
 
     radiusAverage = oldRadiusAve;
@@ -131,25 +129,26 @@ void callbackBall(const ball_detector::ballLocation &data)
 
 // Roam State
 void roamAround() {
+    ROS_INFO("going to balls...");
 
-    // TODO: implement roam function
-    // Drive straight to find new balls out of sight
-    motor.right = 100;
-    motor.left = 100;
-    
+	motor.right = 100;
+	motor.left = 100;
+
     searchCount = 0; // reset search variable
     robotState = searchState;
 }
 
-void resetIntegralVars(){
-	sumAngleError = 0;
-	sumDistanceError = 0;
-	}
+void resetIntegralVars() {
+    sumAngleError = 0;
+    sumDistanceError = 0;
+}
 
 
 
 // Track State
 void trackBallPID() {
+
+    searchCount = 0; // reset search variable
 
     // Calculate error
     double angleError = ball.x;
@@ -207,63 +206,73 @@ void trackBallPID() {
 void lungeFowardToBall() {
     ROS_INFO("lunged foward");
     // pub motor straight
-    motor.left = 120; // delta for weak wheel (4/28)
+    motor.left = 100; // delta for weak wheel (4/28) removed by rw (4/28)
     motor.right = 100;
 
-	resetIntegralVars();
+    resetIntegralVars();
 
     robotState = searchState;
 }
 
 
+// Backup State
+void backup() {
+	motor.left = -80;
+	motor.right = -80;
+	
+	robotState = turnState;	
+	
+	}
+
 // Turn State
 void turnAwayFromWall() {
 
-    // turn motors
-    motor.right = -100;
+	motor.right = -100;
     motor.left = 100;
 
-    robotState = searchState;
-
+	robotState = searchState;
 }
 
 
 // Search State
 void searchForBall() {
     // TODO: implement search function
-	
+
     if(searchFlag) {
 
         motor.right = -125;
         motor.left = 125;
-        searchDelay = 0.1;
+        searchDelay = 0.2;
 
     } else {
         motor.right = 0;
         motor.left = 0;
-        searchDelay = 0.7;
+        searchDelay = 0.5;
     }
     // Wait for ball detection
     searchFlag = !searchFlag; // invert flag
-    searchCount++; // index counting variable
-	resetIntegralVars();
-    ROS_INFO("searching for ball...");
-    
-    if (searchCount > 11) {
-		robotState = roamState;
-	}	
 
+    resetIntegralVars();
+    ROS_INFO("searching for ball... %d", searchCount);
+
+    // exit condition
+    if (searchCount > 18) {
+        ROS_INFO("searchCount > 50");
+        robotState = roamState;
+    }
+    searchCount++; // index counting variable
 }
 
 
 // Ball Timer
 void ballTimer() {
-
     ros::Time begin = ros::Time::now();
     ros::Duration ballDelta = begin - lastBallSeen;
     if(ballDelta.toSec() > forgetBallDelay) {
         ROS_INFO("ball seen a while ago...");
-        robotState = searchState; // this should eventually be roam state
+        if(robotState != roamState) {
+            robotState = searchState;
+        }
     }
 
 }
@@ -306,6 +315,13 @@ int main(int argc, char ** argv)
             searchForBall();
             break;
 
+        case roamState: // Look for balls out of sight
+            ROS_INFO("=> roam state");
+            roamAround();
+            pubMotor.publish(motor);
+            ros::Duration(roamDelay).sleep();
+            break;
+
         case trackState: // Track balls once seen
             ROS_INFO("=> track state");
             trackBallPID();
@@ -325,17 +341,18 @@ int main(int argc, char ** argv)
             ros::Duration(turnDelay).sleep();
             break;
             
-        case roamState: // Look for balls out of sight
-			ROS_INFO("=> roam state");
-			roamAround();
+        case backupState: // Back up to avoid ghosts or walls
+			ROS_INFO("=> backup state");
+			backup();
 			pubMotor.publish(motor);
-			ros::Duration(roamDelay).sleep();
+			ros::Duration(backDelay).sleep(); 
 			break;
-            
+
         case pauseState: // Turn off robot motors
             ROS_INFO("=> pause state");
             motor.right = 0;
             motor.left = 0;
+            break;
 
         default:
             ROS_INFO("=> no state");
