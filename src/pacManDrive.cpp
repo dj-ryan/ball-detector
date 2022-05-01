@@ -153,7 +153,7 @@ void searchForBall() {
 
     // Exit condition if no balls
     if (searchCount > 10) {
-        ROS_INFO("searchCount > 50");
+        ROS_INFO("enterring roamState");
         directionFlag = !directionFlag; // invert flag
         
         robotState = roamState;
@@ -274,10 +274,11 @@ void ballTimer() {
     ros::Time begin = ros::Time::now();
     ros::Duration ballDelta = begin - lastBallSeen;
     if(ballDelta.toSec() > forgetBallDelay) {
-        ROS_INFO("ball seen a while ago...");
+        //ROS_INFO("ball seen a while ago...");
         
-        if(robotState != (roamState || backupState)) {
+        if(robotState == trackState) {
             robotState = searchState;
+            ROS_INFO("ball seen a while ago...");
         }
     }
 
@@ -304,8 +305,6 @@ int main(int argc, char ** argv)
 
     while(ros::ok())
     {
-		// Re-enter search state if ball subscription has not been updated/no balls seen
-        ballTimer();		
 		
         // Robot State Machine
         switch(robotState) {
@@ -358,6 +357,9 @@ int main(int argc, char ** argv)
             ROS_INFO("=> no state");
             break;
         }
+
+		// Re-enter search state if ball subscription has not been updated/no balls seen
+        ballTimer();
 
         // Publish motors & print values
         ROS_INFO("Publish: %d, %d",motor.left, motor.right);
