@@ -40,10 +40,10 @@ double backDelay = 0.5;			// time robot backs up (sec)
 double roamDelay = 1;			// time robot roams looking for balls (sec)
 double radiusAverage;			// ball radius average
 double oldRadiusAve;			// old ball radius average
-double avgRadiusThresh = 8;		// average radius before activate track mode
-double lungeRadiusThresh = 170;	// max radius before activate lunge mode
+double avgRadiusThresh = 4;		// average radius before activate track mode
+double lungeRadiusThresh = 140;	// max radius before activate lunge mode
 double alpha = 0.1; 			// length of running average (1/alpha) i.e. 1/0.1 = 10
-double targetDistance = lungeRadiusThresh; // Target distance when in track state
+double targetDistance = 180; // Target distance when in track state
 
 bool searchFlag = false;		// tflipflop var for search
 bool directionFlag = false;		// tflipflop direction var for search
@@ -296,7 +296,6 @@ int main(int argc, char ** argv)
 
     // Loop rate
     ros::Rate loop_rate(10);
-
     while(ros::ok())
     {
 		
