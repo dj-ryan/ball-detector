@@ -43,7 +43,7 @@ double oldRadiusAve;			// old ball radius average
 double avgRadiusThresh = 4;		// average radius before activate track mode
 double lungeRadiusThresh = 140;	// max radius before activate lunge mode
 double alpha = 0.1; 			// length of running average (1/alpha) i.e. 1/0.1 = 10
-double targetDistance = 180; // Target distance when in track state
+double targetDistance = 180;    // Target distance when in track state
 
 bool searchFlag = false;		// tflipflop var for search
 bool directionFlag = false;		// tflipflop direction var for search
@@ -265,12 +265,12 @@ void turnAwayFromWall() {
 
 // Ball Timer
 void ballTimer() {
-    ros::Time begin = ros::Time::now();
-    ros::Duration ballDelta = begin - lastBallSeen;
-    if(ballDelta.toSec() > forgetBallDelay) {
+    ros::Time begin = ros::Time::now(); // get current time
+    ros::Duration ballDelta = begin - lastBallSeen; // determine time since last ball seen
+    if(ballDelta.toSec() > forgetBallDelay) { // if ball seen a while ago
         //ROS_INFO("ball seen a while ago...");
         
-        if(robotState == trackState) {
+        if(robotState == trackState) { // exit trackState and return to searchState
             robotState = searchState;
             ROS_INFO("ball seen a while ago...");
         }
@@ -310,8 +310,8 @@ int main(int argc, char ** argv)
         case roamState: // Look for balls out of sight
             ROS_INFO("=> roam state");
             roamAround();
-            pubMotor.publish(motor);
-            ros::Duration(roamDelay).sleep();
+            pubMotor.publish(motor); // publish motor speeds
+            ros::Duration(roamDelay).sleep(); // delay while driving
             break;
 
         case trackState: // Track balls once seen
@@ -322,22 +322,22 @@ int main(int argc, char ** argv)
         case lungeState: // Hit ball once in range
             ROS_INFO("=> lunge state");
             lungeFowardToBall();
-            pubMotor.publish(motor);
-            ros::Duration(lungeDelay).sleep(); 
+            pubMotor.publish(motor); // publish motor speeds
+            ros::Duration(lungeDelay).sleep(); // delay while driving
             break;
             
         case backupState: // Back up to avoid ghosts or walls
 			ROS_INFO("=> backup state");
 			backup();
-			pubMotor.publish(motor);
-			ros::Duration(backDelay).sleep(); 
+			pubMotor.publish(motor); // publish motor speeds
+			ros::Duration(backDelay).sleep(); // delay while driving
 			break;
 
         case turnState: // Turn to avoid wall
             ROS_INFO("=> turn state");
             turnAwayFromWall();
-            pubMotor.publish(motor);
-            ros::Duration(turnDelay).sleep();
+            pubMotor.publish(motor); // publish motor speeds
+            ros::Duration(turnDelay).sleep(); // delay while driving
             break;
 
         case pauseState: // Turn off robot motors
